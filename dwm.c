@@ -41,6 +41,7 @@
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
+#include <X11/extensions/record.h>
 
 #include "drw.h"
 #include "util.h"
@@ -1088,11 +1089,101 @@ grabkeys(void)
 
 		XUngrabKey(dpy, AnyKey, AnyModifier, root);
 		for (i = 0; i < LENGTH(keys); i++)
-			if ((code = XKeysymToKeycode(dpy, keys[i].keysym)))
+			if ((code = XKeysymToKeycode(dpy, keys[i].keysym)) || (keys[i].keysym == AnyKey))
 				for (j = 0; j < LENGTH(modifiers); j++)
 					XGrabKey(dpy, code, keys[i].mod | modifiers[j], root,
 						 True, GrabModeAsync, GrabModeAsync);
 	}
+}
+
+void intercept (XPointer user_data, XRecordInterceptData *data)
+{
+/*    XCape_t *self = (XCape_t*)user_data;
+    static Bool mouse_pressed = False;
+    KeyMap_t *km;
+
+    XLockDisplay (self->ctrl_conn);
+
+    if (data->category == XRecordFromServer)
+    {
+        int     key_event = data->data[0];
+        KeyCode key_code  = data->data[1];
+        Key_t *g, *g_prev = NULL;
+
+        for (g = self->generated; g != NULL; g = g->next)
+        {
+            if (g->key == key_code)
+            {
+                if (self->debug) fprintf (stdout,
+                        "Ignoring generated event.\n");
+                if (g_prev != NULL)
+                {
+                    g_prev->next = g->next;
+                }
+                else
+                {
+                    self->generated = g->next;
+                }
+                free (g);
+                goto exit;
+            }
+            g_prev = g;
+        }
+
+        if (self->debug) fprintf (stdout,
+                "Intercepted key event %d, key code %d\n",
+                key_event, key_code);
+
+        if (key_event == ButtonPress)
+        {
+            mouse_pressed = True;
+        }
+        else if (key_event == ButtonRelease)
+        {
+            mouse_pressed = False;
+        }
+        for (km = self->map; km != NULL; km = km->next)
+        {
+            if ((km->UseKeyCode == False
+                    && XkbKeycodeToKeysym (self->ctrl_conn, key_code, 0, 0)
+                        == km->from_ks)
+                || (km->UseKeyCode == True
+                    && key_code == km->from_kc))
+            {
+                handle_key (self, km, mouse_pressed, key_event);
+            }
+            else if (km->pressed
+                    && (key_event == KeyPress || key_event == ButtonPress))
+            {
+                km->used = True;
+            }
+        }
+    }
+
+exit:
+    XUnlockDisplay (self->ctrl_conn); 
+    XRecordFreeData (data);
+    */
+    printf("Intercepted!\n");
+    XUnlockDisplay (dpy); 
+    XRecordFreeData (data);
+    printf("Freed\n");
+}
+
+void
+startIntercept()
+{
+	XRecordRange *rec_range = XRecordAllocRange();
+	XRecordClientSpec client_spec = XRecordAllClients;
+	XRecordContext record_ctx = XRecordCreateContext (dpy,
+		0, &client_spec, 1, &rec_range, 1);
+	if (!XRecordEnableContext (dpy,
+		record_ctx, intercept, NULL))
+	{
+		fprintf (stderr, "Failed to enable xrecord context\n");
+		exit (EXIT_FAILURE);
+	}
+	printf("!\n");
 }
 
 void
@@ -1123,6 +1214,7 @@ keypress(XEvent *e)
 
 	ev = &e->xkey;
 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	printf("%d %d\n", XKeysymToKeycode(dpy, keys[i].keysym), ev->state);
 	for (i = 0; i < LENGTH(keys); i++)
 		if (keysym == keys[i].keysym
 		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
@@ -1561,9 +1653,11 @@ run(void)
 	XEvent ev;
 	/* main event loop */
 	XSync(dpy, False);
-	while (running && !XNextEvent(dpy, &ev))
+	while (running && !XNextEvent(dpy, &ev)) {
+		printf("ev: %d\n", ev.type);
 		if (handler[ev.type])
 			handler[ev.type](&ev); /* call handler */
+	}
 }
 
 void
@@ -1793,6 +1887,7 @@ setup(void)
 	XChangeWindowAttributes(dpy, root, CWEventMask|CWCursor, &wa);
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
+	pthread_create(incept_thread, NULL, startIntercept, NULL);
 	focus(NULL);
 }
 

@@ -26,7 +26,7 @@ config.h:
 
 dwm: ${OBJ}
 	@echo CC -o $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+	@${CC} -lXtst -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
 	@echo cleaning

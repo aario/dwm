@@ -17,7 +17,7 @@ My fork (aario) contains these features:
 
 Requirements
 ------------
-In order to build dwm you need the Xlib header files.
+In order to build dwm you need the Xlib and libxtst header files.
 
 
 Installation
