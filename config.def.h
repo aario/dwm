@@ -1,12 +1,13 @@
 /* See LICENSE file for copyright and license details. */
 
-#define NUMCOLORS         4
+#define NUMCOLORS         5
 static const char colors[NUMCOLORS][MAXCOLORS][8] = {
   // border   foreground background
   { "#252525", "#CFFFEA", "#252525" },  // normal
   { "#E08A00", "#00FFFC", "#E08A00" },  // selected
   { "#FFCA00", "#000000", "#FFCA00" },  // urgent/warning  (black on yellow)
   { "#ff0000", "#ffffff", "#ff0000" },  // error (white on red)
+  { "#E08A00", "#00FFFC", "#E08A00" },  // Active titlebar
   // add more here
 };
 
@@ -14,7 +15,7 @@ static const char colors[NUMCOLORS][MAXCOLORS][8] = {
 static const char *fonts[] = {
 	"monospace:size=15"
 };
-static const char dmenufont[]       = "monospace:size=10";
+static const char dmenufont[]       = "monospace:size=15";
 static const char normbordercolor[] = "#252525";
 static const char firstbgcolor[]     = "#252525";
 static const char firstfgcolor[]     = "#CFFFEA";
