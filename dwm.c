@@ -206,6 +206,7 @@ static void grabbuttons(Client *c, int focused);
 static void grabkeys(void);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
+static void keyrelease(XEvent *e);
 static void killclient(const Arg *arg);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -239,6 +240,7 @@ static void setup(void);
 static void showhide(Client *c);
 static void sigchld(int unused);
 static void spawn(const Arg *arg);
+static void modkey_alone_handler();
 static Monitor *systraytomon(Monitor *m);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
@@ -292,6 +294,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
+	[KeyRelease] = keyrelease,
 	[MappingNotify] = mappingnotify,
 	[MapRequest] = maprequest,
 	[MotionNotify] = motionnotify,
@@ -307,6 +310,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root;
+static int keyreleases_to_ignore;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -1087,6 +1091,13 @@ grabkeys(void)
 		KeyCode code;
 
 		XUngrabKey(dpy, AnyKey, AnyModifier, root);
+
+		//Grab Modkey alone keystroke
+		for (j = 0; j < LENGTH(modifiers); j++)
+			XGrabKey(dpy, XKeysymToKeycode(dpy, XK_Super_L), modifiers[j], root,
+				True, GrabModeAsync, GrabModeAsync);
+
+		//Grab other hotkeys
 		for (i = 0; i < LENGTH(keys); i++)
 			if ((code = XKeysymToKeycode(dpy, keys[i].keysym)))
 				for (j = 0; j < LENGTH(modifiers); j++)
@@ -1120,14 +1131,29 @@ keypress(XEvent *e)
 	unsigned int i;
 	KeySym keysym;
 	XKeyEvent *ev;
-
 	ev = &e->xkey;
 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
 	for (i = 0; i < LENGTH(keys); i++)
 		if (keysym == keys[i].keysym
 		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
-		&& keys[i].func)
+		&& keys[i].func) {
 			keys[i].func(&(keys[i].arg));
+			if (CLEANMASK(keys[i].mod) == Mod4Mask)
+				keyreleases_to_ignore = 2;//Prevent modkey_alone_handler to be called when a hotkey is matched
+		}
+}
+
+void
+keyrelease(XEvent *e)
+{
+	KeySym keysym;
+	XKeyEvent *ev;
+	ev = &e->xkey;
+	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	if ((!keyreleases_to_ignore) && (keysym == XK_Super_L))
+		modkey_alone_handler();
+	if (keyreleases_to_ignore)
+		keyreleases_to_ignore--;
 }
 
 void
@@ -1847,6 +1873,13 @@ spawn(const Arg *arg)
 		perror(" failed");
 		exit(EXIT_SUCCESS);
 	}
+}
+
+void
+modkey_alone_handler()
+{
+	const Arg arg = {.v = dmenuallcmd};
+	spawn(&arg);
 }
 
 Monitor *
