@@ -310,7 +310,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root;
-static int keyreleases_to_ignore;
+static int matched_hotkey;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -493,8 +493,12 @@ buttonpress(XEvent *e)
 	}
 	for (i = 0; i < LENGTH(buttons); i++)
 		if (click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
-		&& CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
+		&& CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state)) {
 			buttons[i].func(click == ClkTagBar && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
+			matched_hotkey = 1; //Prevent modkey_alone_handler to be called when a hotkey is matched
+			return;
+		}
+	matched_hotkey = 0;
 }
 
 void
@@ -1137,10 +1141,11 @@ keypress(XEvent *e)
 		if (keysym == keys[i].keysym
 		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
 		&& keys[i].func) {
+			matched_hotkey = 1; //Prevent modkey_alone_handler to be called when a hotkey is matched
 			keys[i].func(&(keys[i].arg));
-			if (CLEANMASK(keys[i].mod) == Mod4Mask)
-				keyreleases_to_ignore = 2;//Prevent modkey_alone_handler to be called when a hotkey is matched
+			return;
 		}
+	matched_hotkey = 0;
 }
 
 void
@@ -1149,11 +1154,11 @@ keyrelease(XEvent *e)
 	KeySym keysym;
 	XKeyEvent *ev;
 	ev = &e->xkey;
+
 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
-	if ((!keyreleases_to_ignore) && (keysym == XK_Super_L))
+
+	if ((!matched_hotkey) && (keysym == XK_Super_L) && (CLEANMASK(ev->state) == Mod4Mask))
 		modkey_alone_handler();
-	if (keyreleases_to_ignore)
-		keyreleases_to_ignore--;
 }
 
 void
