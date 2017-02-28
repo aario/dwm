@@ -24,6 +24,7 @@ My fork (aario) contains these features:
 - Mod+X keys   toggles bar
 - Mod+H keys   launch dmenu_home which browses through home folder and opens files
 - Mod+Esc keys launch dmenu_apps which browses through applications menu and launches apps
+- Mod+R keys   restarts the window manager
 - Autostart all commands in ~/.dwm/autostart_blocking.sh and ~/.dwm/autostart.sh
 - You can also close windows by Alt+F4
 
