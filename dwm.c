@@ -1400,9 +1400,11 @@ propertynotify(XEvent *e)
 		updatesystray();
 	}
 	if (ev->atom == rootpmapid) {
-		Monitor *m = wintomon(ev->window);
-		drw_takebluredwallpaper(drw, 0, 0, m->ww, bh, blurlevel, CPU_THREADS);
-		drawbar(m);
+		Monitor *m;
+		for (m = mons; m; m = m->next) {
+			drw_takebluredwallpaper(drw, m->mx, m->my+m->by, m->mw, bh, blurlevel, CPU_THREADS);
+			drawbar(m);
+		}
 	}
 	if ((ev->window == root) && (ev->atom == XA_WM_NAME))
 		updatestatus();
