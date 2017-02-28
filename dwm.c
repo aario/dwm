@@ -1387,7 +1387,7 @@ refresh_bar_background()
 {
 	Monitor *m;
 	for (m = mons; m; m = m->next) {
-		drw_takebluredwallpaper(drw, m->mx, m->my+m->by, m->mw, bh, blurlevel, CPU_THREADS);
+		drw_takebluredwallpaper(drw, m->mx, m->by, m->mw, bh, blurlevel, CPU_THREADS);
 	}
 }
 

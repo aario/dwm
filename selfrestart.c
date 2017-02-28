@@ -56,7 +56,9 @@ char *get_dwm_path(){
  */
 void self_restart(const Arg *arg) {
     char *const argv[] = {get_dwm_path(), "-r", NULL};
-    printf("self_restart\n");
+	FILE *f = fopen("/tmp/dwm.log", "a");
+    fprintf(f, "self_restart\n");
+	fclose(f);
 
     if(argv[0] == NULL){
         return;
