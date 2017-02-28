@@ -1383,6 +1383,15 @@ pop(Client *c)
 }
 
 void
+refresh_bar_background()
+{
+	Monitor *m;
+	for (m = mons; m; m = m->next) {
+		drw_takebluredwallpaper(drw, m->mx, m->my+m->by, m->mw, bh, blurlevel, CPU_THREADS);
+	}
+}
+
+void
 propertynotify(XEvent *e)
 {
 	Client *c;
@@ -1400,11 +1409,8 @@ propertynotify(XEvent *e)
 		updatesystray();
 	}
 	if (ev->atom == rootpmapid) {
-		Monitor *m;
-		for (m = mons; m; m = m->next) {
-			drw_takebluredwallpaper(drw, m->mx, m->my+m->by, m->mw, bh, blurlevel, CPU_THREADS);
-			drawbar(m);
-		}
+		refresh_bar_background();
+		drawbars();
 	}
 	if ((ev->window == root) && (ev->atom == XA_WM_NAME))
 		updatestatus();
@@ -1820,7 +1826,7 @@ setup(void)
                 scheme[i].bg = drw_clr_create(drw, colors[i][2]);
         }
 
-	drw_takebluredwallpaper(drw, 0, 0, sw, bh, blurlevel, CPU_THREADS);
+	refresh_bar_background();
 	/* init system tray */
 	updatesystray();
 	/* init bars */
