@@ -2535,22 +2535,29 @@ zoom(const Arg *arg)
 int
 main(int argc, char *argv[])
 {
+	int autostart = 1;
 	if (argc == 2 && !strcmp("-v", argv[1]))
 		die("dwm-"VERSION "\n");
+	else if (argc == 2 && !strcmp("-r", argv[1])) //The window manager is probably restarted and no need for running autostarts
+		autostart = 0;
 	else if (argc != 1)
 		die("usage: dwm [-v]\n");
 	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fputs("warning: no locale support\n", stderr);
 
-	puts("Waiting for autostart_blocking...\n");
-	runAutostartBlocking();
+	if (autostart) {
+		puts("Waiting for autostart_blocking...\n");
+		runAutostartBlocking();
+	}
 
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display\n");
 	checkotherwm();
 	setup();
 
-	runAutostart();
+	if (autostart) {
+		runAutostart();
+	}
 
 	scan();
 	run();
