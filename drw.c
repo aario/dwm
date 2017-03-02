@@ -64,7 +64,7 @@ utf8decode(const char *c, long *u, size_t clen)
 }
 
 Drw *
-drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h, unsigned int numcolors)
+drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h)
 {
 	Drw *drw;
 
@@ -78,8 +78,6 @@ drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h
 	drw->gc = XCreateGC(dpy, root, 0, NULL);
 	drw->fontcount = 0;
 	XSetLineAttributes(dpy, drw->gc, 1, LineSolid, CapButt, JoinMiter);
-	drw->tintcachecount = 2 * numcolors; //Enough space to cache all possible foreground and background colors
-	drw->tintcache = malloc(drw->tintcachecount * sizeof(TintCache));
 	return drw;
 }
 
@@ -211,7 +209,7 @@ drw_setscheme(Drw *drw, ClrScheme *scheme)
 }
 
 void
-drw_colored_text(Drw *drw, ClrScheme *scheme, int numcolors, int x, int y, unsigned int w, unsigned int h, char *text, unsigned int num_threads)
+drw_colored_text(Drw *drw, Background *background, ClrScheme *scheme, int numcolors, int x, int y, unsigned int w, unsigned int h, char *text, unsigned int num_threads)
 {
 	if (!drw || !drw->fontcount || !drw->scheme)
 		return;
@@ -226,12 +224,12 @@ drw_colored_text(Drw *drw, ClrScheme *scheme, int numcolors, int x, int y, unsig
 		c = *ptr;
 		*ptr = 0;
 		if (i)
-			x = drw_text(drw, x, y, w, h, buf, False, num_threads) + drw->fonts[0]->h;
+			x = drw_text(drw, background, x, y, w, h, buf, False, num_threads) + drw->fonts[0]->h;
 		*ptr = c;
 		drw_setscheme(drw, &scheme[c-1]);
 		buf = ++ptr;
 	}
-	drw_text(drw, x, y, w, h, buf, False, num_threads);
+	drw_text(drw, background, x, y, w, h, buf, False, num_threads);
 }
 
 void
@@ -249,24 +247,24 @@ drw_bluriamge (XImage *image, int radius, unsigned int cpu_threads)
 }
 
 XImage*
-drw_gettintedscreenshot(Drw* drw, unsigned long tint, unsigned int num_threads)
+drw_gettintedscreenshot(Drw* drw, Background *background, unsigned long tint, unsigned int num_threads)
 {
-	for (int i = 0; i < drw->tintcachecount; i++) {
-		if ((drw->tintcache[i].tint == tint) && (drw->tintcache[i].image)){
-			return drw->tintcache[i].image;
-		} else if (!drw->tintcache[i].image) {
-			drw->tintcache[i].tint = tint;
-			drw->tintcache[i].image = malloc(sizeof(XImage));
-			memcpy(drw->tintcache[i].image,drw->screenshot,sizeof(XImage));
-			unsigned long bytes2copy=sizeof(char)*drw->screenshot->bytes_per_line*drw->screenshot->height;
-			drw->tintcache[i].image->data=malloc(bytes2copy);
-			memcpy(drw->tintcache[i].image->data,drw->screenshot->data,bytes2copy);
+	for (int i = 0; i < background->tintcachecount; i++) {
+		if ((background->tintcache[i].tint == tint) && (background->tintcache[i].image)){
+			return background->tintcache[i].image;
+		} else if (!background->tintcache[i].image) {
+			background->tintcache[i].tint = tint;
+			background->tintcache[i].image = malloc(sizeof(XImage));
+			memcpy(background->tintcache[i].image,background->screenshot,sizeof(XImage));
+			unsigned long bytes2copy=sizeof(char)*background->screenshot->bytes_per_line*background->screenshot->height;
+			background->tintcache[i].image->data=malloc(bytes2copy);
+			memcpy(background->tintcache[i].image->data,background->screenshot->data,bytes2copy);
 			unsigned char *t = malloc(3 * sizeof(char));
 			t[0] = tint & 0xff;
 			t[1] = (tint >> 8) & 0xff;
 			t[2] = (tint >> 16) & 0xff;
-			stacktint(drw->tintcache[i].image, t, num_threads);
-			return drw->tintcache[i].image;
+			stacktint(background->tintcache[i].image, t, num_threads);
+			return background->tintcache[i].image;
 		}
 	}
 	printf("FATAL: An undefined tint color introduced: %lu\n", tint);
@@ -274,22 +272,22 @@ drw_gettintedscreenshot(Drw* drw, unsigned long tint, unsigned int num_threads)
 }
 
 void
-drw_fillrect(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned long tint, unsigned int num_threads)
+drw_fillrect(Drw *drw, Background *background, int x, int y, unsigned int w, unsigned int h, unsigned long tint, unsigned int num_threads)
 {
-    XImage* image = drw_gettintedscreenshot(drw, tint, num_threads);
+    XImage* image = drw_gettintedscreenshot(drw, background, tint, num_threads);
     XPutImage(drw->dpy, drw->drawable, drw->gc, image, x, y, x, y, w, h);
     XFlush(drw->dpy);
 }
 
 void
-drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int empty, int invert, unsigned int num_threads)
+drw_rect(Drw *drw, Background *background, int x, int y, unsigned int w, unsigned int h, int filled, int empty, int invert, unsigned int num_threads)
 {
 	unsigned long pix;
 	if (!drw->scheme)
 		return;
 	pix = invert ? drw->scheme->bg->pix : drw->scheme->fg->pix;
 	if (filled)
-		drw_fillrect(drw, x, y, w + 1, h + 1, pix, num_threads);
+		drw_fillrect(drw, background, x, y, w + 1, h + 1, pix, num_threads);
 	else if (empty) {
 		XSetForeground(drw->dpy, drw->gc, pix);
 		XDrawRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
@@ -320,31 +318,42 @@ drw_getrootwallpaperdata(Drw *drw)
 }
 
 void
-drw_takebluredwallpaper(Drw *drw, int x, int y, unsigned int w, unsigned int h, int blurlevel, unsigned int num_threads)
+drw_takebluredwallpaper(Drw *drw, Background *background, int x, int y, unsigned int w, unsigned int h, int blurlevel, unsigned int num_threads)
 {
 		unsigned char* wallpaper_data = drw_getrootwallpaperdata(drw);
+		Window root_return;
+		int x_return, y_return;
+		unsigned int width_return, height_return;
+		unsigned int border_width_return;
+		unsigned int depth_return;
 		if (wallpaper_data) {
-				if ((!drw->last_wallpaper_data) || (memcmp(wallpaper_data, drw->last_wallpaper_data, (y+h)*w*4))) {
+				if ((!background->last_wallpaper_data) || (memcmp(wallpaper_data, background->last_wallpaper_data, (y+h)*w*4))) {
+					background->screenshot = NULL;
 					Pixmap p = *((Pixmap *) wallpaper_data);
-					drw->screenshot = XGetImage(drw->dpy, p, x, y, w, h, AllPlanes, ZPixmap);
-					drw_bluriamge(drw->screenshot, blurlevel, num_threads);
-					drw->last_wallpaper_data = wallpaper_data;
-					for (int i = 0; i < drw->tintcachecount; i++) {
-							if (drw->tintcache[i].tint) {
-									drw->tintcache[i].tint = 0;
-									free(drw->tintcache[i].image->data);
-									free(drw->tintcache[i].image);
-									drw->tintcache[i].image = NULL;
+					XGetGeometry(drw->dpy, p, &root_return, &x_return, &y_return, &width_return, 
+                      &height_return, &border_width_return, &depth_return);
+					if (( x + w <= width_return ) && ( y + h <= height_return)) {
+						background->screenshot = XGetImage(drw->dpy, p, x, y, w, h, AllPlanes, ZPixmap);
+						drw_bluriamge(background->screenshot, blurlevel, num_threads);
+						background->last_wallpaper_data = wallpaper_data;
+						for (int i = 0; i < background->tintcachecount; i++) {
+							if (background->tintcache[i].tint) {
+								background->tintcache[i].tint = 0;
+								free(background->tintcache[i].image->data);
+								free(background->tintcache[i].image);
+								background->tintcache[i].image = NULL;
 							}
+						}
 					}
 				}
-		} else {
-				drw->screenshot = XGetImage(drw->dpy,drw->root, x, y, w, h, AllPlanes, ZPixmap);
+		}
+		if (!background->screenshot) {
+				background->screenshot = XGetImage(drw->dpy,drw->root, x, y, w, h, AllPlanes, ZPixmap);
 		}
 }
 
 int
-drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *text, int invert, unsigned int num_threads)
+drw_text(Drw *drw, Background *background, int x, int y, unsigned int w, unsigned int h, const char *text, int invert, unsigned int num_threads)
 {
 	char buf[1024];
 	int tx, ty, th;
@@ -369,6 +378,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 	} else {
 		drw_fillrect(
 			drw,
+			background, 
 			x,
 			y,
 			w,

@@ -44,6 +44,8 @@
 
 #include "drw.h"
 #include "util.h"
+#include "logger.h"
+#include "selfrestart.h"
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -57,7 +59,7 @@
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
-#define TEXTW(X)                (drw_text(drw, 0, 0, 0, 0, (X), 0, CPU_THREADS) + drw->fonts[0]->h)
+#define TEXTW(X,M)                (drw_text(drw, M->background, 0, 0, 0, 0, (X), 0, CPU_THREADS) + drw->fonts[0]->h)
 
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 #define _NET_SYSTEM_TRAY_ORIENTATION_HORZ 0
@@ -151,6 +153,7 @@ struct Monitor {
 	Monitor *next;
 	Window barwin;
 	const Layout *lt[2];
+	Background *background;
 };
 
 typedef struct {
@@ -239,6 +242,7 @@ static void setmfact(const Arg *arg);
 static void setup(void);
 static void showhide(Client *c);
 static void sigchld(int unused);
+static void self_restart(const Arg *arg);
 static void spawn(const Arg *arg);
 static void modkey_alone_handler();
 static Monitor *systraytomon(Monitor *m);
@@ -311,6 +315,7 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root;
 static int matched_hotkey;
+static char * dwm_path;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -476,14 +481,14 @@ buttonpress(XEvent *e)
 	if (ev->window == selmon->barwin) {
 		i = x = 0;
 		do
-			x += TEXTW(tags[i]);
+			x += TEXTW(tags[i], m);
 		while (ev->x >= x && ++i < LENGTH(tags));
 		if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
 		} else if (ev->x < x + blw)
 			click = ClkLtSymbol;
-		else if (ev->x > selmon->ww - TEXTW(stext))
+		else if (ev->x > selmon->ww - TEXTW(stext, m))
 			click = ClkStatusText;
 		else
 			click = ClkWinTitle;
@@ -657,6 +662,15 @@ configure(Client *c)
 }
 
 void
+refresh_bar_background()
+{
+	Monitor *m;
+	for (m = mons; m; m = m->next) {
+		drw_takebluredwallpaper(drw, m->background, m->mx, m->by, m->mw, bh, blurlevel, CPU_THREADS);
+	}
+}
+
+void
 configurenotify(XEvent *e)
 {
 	Monitor *m;
@@ -744,6 +758,9 @@ createmon(void)
 	m->topbar = topbar;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
+	m->background = calloc(1, sizeof(Background));
+	m->background->tintcachecount = 2 * NUMCOLORS; //Enough space to cache all possible foreground and background colors
+	m->background->tintcache = calloc(m->background->tintcachecount, sizeof(TintCache));
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
 }
@@ -818,20 +835,20 @@ drawbar(Monitor *m)
 	}
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
-		w = TEXTW(tags[i]);
+		w = TEXTW(tags[i], m);
 		drw_setscheme(drw, &scheme[(m->tagset[m->seltags] & 1 << i) ? 1 : (urg & 1 << i ? 2:0)]);
-		drw_text(drw, x, 0, w, bh, tags[i], 0, CPU_THREADS);
-		drw_rect(drw, x + 1, 1, dx, dx, m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
+		drw_text(drw, m->background, x, 0, w, bh, tags[i], 0, CPU_THREADS);
+		drw_rect(drw, m->background, x + 1, 1, dx, dx, m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
 		         occ & 1 << i, False, CPU_THREADS);
 		x += w;
 	}
-	w = blw = TEXTW(m->ltsymbol);
+	w = blw = TEXTW(m->ltsymbol, m);
 	drw_setscheme(drw, &scheme[0]);
-	drw_text(drw, x, 0, w, bh, m->ltsymbol, 0, CPU_THREADS);
+	drw_text(drw, m->background, x, 0, w, bh, m->ltsymbol, 0, CPU_THREADS);
 	x += w;
 	xx = x;
 	if (m == selmon) { /* status is only drawn on selected monitor */
-		w = TEXTW(stext);
+		w = TEXTW(stext, m);
 		x = m->ww - w;
 		if (showsystray && m == systraytomon(m)) {
 			x -= getsystraywidth();
@@ -840,18 +857,18 @@ drawbar(Monitor *m)
 			x = xx;
 			w = m->ww - xx;
 		}
-		drw_colored_text(drw, scheme, NUMCOLORS, x, 0, w, bh, stext, CPU_THREADS);
+		drw_colored_text(drw, m->background, scheme, NUMCOLORS, x, 0, w, bh, stext, CPU_THREADS);
 	} else
 		x = m->ww;
 	if ((w = x - xx) > bh) {
 		x = xx;
 		if (m->sel) {
 			drw_setscheme(drw, &scheme[m == selmon ? 4 : 0]);
-			drw_text(drw, x, 0, w, bh, m->sel->name, 0, CPU_THREADS);
-			drw_rect(drw, x + 1, 1, dx, dx, m->sel->isfixed, m->sel->isfloating, False, CPU_THREADS);
+			drw_text(drw, m->background, x, 0, w, bh, m->sel->name, 0, CPU_THREADS);
+			drw_rect(drw, m->background, x + 1, 1, dx, dx, m->sel->isfixed, m->sel->isfloating, False, CPU_THREADS);
 		} else {
 			drw_setscheme(drw, &scheme[0]);
-			drw_rect(drw, x, 0, w, bh, 1, 0, True, CPU_THREADS);
+			drw_rect(drw, m->background, x, 0, w, bh, 1, 0, True, CPU_THREADS);
 		}
 	}
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
@@ -1383,15 +1400,6 @@ pop(Client *c)
 }
 
 void
-refresh_bar_background()
-{
-	Monitor *m;
-	for (m = mons; m; m = m->next) {
-		drw_takebluredwallpaper(drw, m->mx, m->by, m->mw, bh, blurlevel, CPU_THREADS);
-	}
-}
-
-void
 propertynotify(XEvent *e)
 {
 	Client *c;
@@ -1789,11 +1797,12 @@ setup(void)
 	sw = DisplayWidth(dpy, screen);
 	sh = DisplayHeight(dpy, screen);
 	root = RootWindow(dpy, screen);
-	drw = drw_create(dpy, screen, root, sw, sh, NUMCOLORS);
+	drw = drw_create(dpy, screen, root, sw, sh);
 	drw_load_fonts(drw, fonts, LENGTH(fonts));
 	if (!drw->fontcount)
 		die("no fonts could be loaded.\n");
 	bh = drw->fonts[0]->h + 2;
+	rootpmapid = XInternAtom(dpy, "_XROOTPMAP_ID", False);
 	updategeom();
 	/* init atoms */
 	wmatom[WMProtocols] = XInternAtom(dpy, "WM_PROTOCOLS", False);
@@ -1814,7 +1823,6 @@ setup(void)
 	xatom[Manager] = XInternAtom(dpy, "MANAGER", False);
 	xatom[Xembed] = XInternAtom(dpy, "_XEMBED", False);
 	xatom[XembedInfo] = XInternAtom(dpy, "_XEMBED_INFO", False);
-	rootpmapid = XInternAtom(dpy, "_XROOTPMAP_ID", False);
 	/* init cursors */
 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
@@ -1826,7 +1834,6 @@ setup(void)
                 scheme[i].bg = drw_clr_create(drw, colors[i][2]);
         }
 
-	refresh_bar_background();
 	/* init system tray */
 	updatesystray();
 	/* init bars */
@@ -1870,6 +1877,13 @@ sigchld(int unused)
 	if (signal(SIGCHLD, sigchld) == SIG_ERR)
 		die("can't install SIGCHLD handler:");
 	while (0 < waitpid(-1, NULL, WNOHANG));
+}
+
+
+void
+self_restart(const Arg *arg)
+{
+	restart(dwm_path);
 }
 
 void
@@ -2088,6 +2102,7 @@ updatebars(void)
 		.background_pixmap = ParentRelative,
 		.event_mask = ButtonPressMask|ExposureMask
 	};
+	refresh_bar_background();
 	for (m = mons; m; m = m->next) {
 		if (m->barwin)
 			continue;
@@ -2102,6 +2117,7 @@ updatebars(void)
 			XMapRaised(dpy, systray->win);
 		XMapRaised(dpy, m->barwin);
 	}
+	refresh_bar_background();
 }
 
 void
@@ -2395,7 +2411,7 @@ updatesystray(void) {
 	XMapWindow(dpy, systray->win);
 	XMapSubwindows(dpy, systray->win);
 	/* redraw background */
-	drw_rect(drw, 0, 0, w, bh, True, False, False, CPU_THREADS);
+	drw_rect(drw, m->background, 0, 0, w, bh, True, False, False, CPU_THREADS);
 	XSync(dpy, False);
 }
 
@@ -2535,7 +2551,9 @@ zoom(const Arg *arg)
 int
 main(int argc, char *argv[])
 {
+	startlogger();
 	int autostart = 1;
+	dwm_path = get_dwm_path();//Get path of current executable needed in case of restart
 	if (argc == 2 && !strcmp("-v", argv[1]))
 		die("dwm-"VERSION "\n");
 	else if (argc == 2 && !strcmp("-r", argv[1])) //The window manager is probably restarted and no need for running autostarts
@@ -2543,10 +2561,10 @@ main(int argc, char *argv[])
 	else if (argc != 1)
 		die("usage: dwm [-v]\n");
 	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		fputs("warning: no locale support\n", stderr);
+		writelog("warning: no locale support\n");
 
 	if (autostart) {
-		puts("Waiting for autostart_blocking...\n");
+		writelog("Waiting for autostart_blocking...\n");
 		runAutostartBlocking();
 	}
 
@@ -2563,5 +2581,6 @@ main(int argc, char *argv[])
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
+	endlogger();
 	return EXIT_SUCCESS;
 }

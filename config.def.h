@@ -84,8 +84,6 @@ static const char *dmenuappscmd[] = { "dmenu_apps", "-m", dmenumon, "-fn", dmenu
 static const char *slockcmd[] = { "slock", NULL };
 static const char *termcmd[]  = { "st", NULL };
 
-#include "selfrestart.c"
-
 static Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },

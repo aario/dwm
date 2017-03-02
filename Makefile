@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = drw.c dwm.c util.c stackblur.c stacktint.c
+SRC = drw.c dwm.c util.c stackblur.c stacktint.c selfrestart.c logger.c
 OBJ = ${SRC:.c=.o}
 
 all: options dwm

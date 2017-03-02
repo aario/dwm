@@ -1,8 +1,13 @@
+#ifndef __SELF_RESTART__
+#define __SELF_RESTART__
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "selfrestart.h"
+#include "logger.h"
 
 /**
  * Magically finds the current's executable path
@@ -12,13 +17,14 @@
  *
  * @return char* the path of the current executable
  */
-char *get_dwm_path(){
+char *
+get_dwm_path(){
     struct stat s;
     int r, length, rate = 42;
     char *path = NULL;
 
     if(lstat("/proc/self/exe", &s) == -1){
-        perror("lstat:");
+        writelog("lstat:");
         return NULL;
     }
 
@@ -31,14 +37,14 @@ char *get_dwm_path(){
         path = malloc(sizeof(char) * length);
 
         if(path == NULL){
-            perror("malloc:");
+            writelog("malloc:");
             return NULL;
         }
 
         r = readlink("/proc/self/exe", path, length);
 
         if(r == -1){
-            perror("readlink:");
+            writelog("readlink:");
             return NULL;
         }
     }while(r >= length);
@@ -54,15 +60,17 @@ char *get_dwm_path(){
  * Initially inspired by: Yu-Jie Lin
  * https://sites.google.com/site/yjlnotes/notes/dwm
  */
-void self_restart(const Arg *arg) {
-    char *const argv[] = {get_dwm_path(), "-r", NULL};
-	FILE *f = fopen("/tmp/dwm.log", "a");
-    fprintf(f, "self_restart\n");
-	fclose(f);
+void
+restart(char * dwm_path) {
+    char *const argv[] = {dwm_path, "-r", NULL};
 
     if(argv[0] == NULL){
+        writelog("cannot get dwm path\n");
         return;
     }
 
+    writelog("Self Restarting...\n");
     execv(argv[0], argv);
 }
+
+#endif
