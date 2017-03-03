@@ -15,6 +15,7 @@ My fork (aario) contains these features:
 - Status colors patch applied
 - Per-window keyboard layout patch applied
 - All shortcuts are now based on Win key (instead of Alt or Shift+Alt)
+- Added multi columns layout (dwm-columns patch)
 - Mod+L keys   launch slock
 - Mod+W keys   launch dmenu_win (You have to install it from github.com/aario/dmenu along with wmctrl)
 - Mod+N keys   launch dmenu_media (Media player controller menu)
@@ -28,6 +29,7 @@ My fork (aario) contains these features:
 - Meta key     launches dmenu_all
 - Autostart all commands in ~/.dwm/autostart_blocking.sh and ~/.dwm/autostart.sh
 - You can also close windows by Alt+F4
+- F1, F2, ...  function keys switch between different layours (tiling, floating, etc)
 
 Requirements
 ------------
