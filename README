@@ -14,6 +14,7 @@ My fork (aario) contains these features:
 - Systray patch applied
 - Status colors patch applied
 - Per-window keyboard layout patch applied
+- Standard media keys supported (Volume Up/Down, Play/Pause, etc.)
 - All shortcuts are now based on Win key (instead of Alt or Shift+Alt)
 - Added multi columns layout (dwm-columns patch)
 - Mod+L keys   launch slock
