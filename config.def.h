@@ -73,18 +73,25 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd_prefix="dmenu_";
-static const char *dmenuallcmd[] = { "dmenu_all", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenuwincmd[] = { "dmenu_win", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenuvolcmd[] = { "dmenu_vol", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenublcmd[] = { "dmenu_bl", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenumediacmd[] = { "dmenu_media", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenucustomcmd[] = { "dmenu_custom", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenuhomecmd[] = { "dmenu_home", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenuappscmd[] = { "dmenu_apps", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *slockcmd[] = { "slock", NULL };
-static const char *termcmd[]  = { "st", NULL };
+static const char *dmenucmd_prefix          ="dmenu_";
+static const char *dmenuallcmd[]            = { "dmenu_all", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenucmd[]               = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenuwincmd[]            = { "dmenu_win", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenuvolcmd[]            = { "dmenu_vol", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenuvolcmd_down[]       = { "dmenu_vol", "--volumedown", NULL };
+static const char *dmenuvolcmd_mute[]       = { "dmenu_vol", "--mute", NULL };
+static const char *dmenuvolcmd_up[]         = { "dmenu_vol", "--volumeup", NULL };
+static const char *dmenublcmd[]             = { "dmenu_bl", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenumediacmd[]          = { "dmenu_media", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenumediacmd_playpause[]= { "dmenu_media", "--playpause", NULL };
+static const char *dmenumediacmd_stop[]     = { "dmenu_media", "--stop", NULL };
+static const char *dmenumediacmd_previous[] = { "dmenu_media", "--previous", NULL };
+static const char *dmenumediacmd_next[]     = { "dmenu_media", "--next", NULL };
+static const char *dmenucustomcmd[]         = { "dmenu_custom", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenuhomecmd[]           = { "dmenu_home", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenuappscmd[]           = { "dmenu_apps", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *slockcmd[]               = { "slock", NULL };
+static const char *termcmd[]                = { "st", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -134,6 +141,15 @@ static Key keys[] = {
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_r,      self_restart,   {0} },
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+	{ 0,                            KEYSYM_VOLUMEDOWN,spawn,   {.v = dmenuvolcmd_down } },
+	{ 0,                            KEYSYM_MUTE,spawn,         {.v = dmenuvolcmd_mute } },
+	{ 0,                            KEYSYM_VOLUMEUP,spawn,     {.v = dmenuvolcmd_up } },
+	{ 0,                            KEYSYM_HOME,spawn,         {.v = dmenuhomecmd } },
+	{ 0,                            KEYSYM_MEDIAPLAYER,spawn,  {.v = dmenumediacmd } },
+	{ 0,                            KEYSYM_PLAYPAUSE,spawn,    {.v = dmenumediacmd_playpause } },
+	{ 0,                            KEYSYM_STOP,spawn,         {.v = dmenumediacmd_stop } },
+	{ 0,                            KEYSYM_PREVIOUS,spawn,     {.v = dmenumediacmd_previous } },
+	{ 0,                            KEYSYM_NEXT,spawn,         {.v = dmenumediacmd_next } },
 };
 
 /* button definitions */

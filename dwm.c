@@ -78,6 +78,16 @@
 #define VERSION_MINOR               0
 #define XEMBED_EMBEDDED_VERSION (VERSION_MAJOR << 16) | VERSION_MINOR
 
+#define KEYSYM_VOLUMEDOWN						269025041
+#define KEYSYM_MUTE									269025042
+#define KEYSYM_VOLUMEUP							269025043
+#define KEYSYM_PLAYPAUSE						269025044
+#define KEYSYM_STOP									269025045
+#define KEYSYM_PREVIOUS							269025046
+#define KEYSYM_NEXT									269025047
+#define KEYSYM_MEDIAPLAYER					269025153
+#define KEYSYM_HOME									269025048
+
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum { SchemeNorm, SchemeSel, SchemeLast }; /* color schemes */
@@ -1189,7 +1199,6 @@ grabkeys(void)
 		KeyCode code;
 
 		XUngrabKey(dpy, AnyKey, AnyModifier, root);
-
 		//Grab Modkey alone keystroke
 		for (j = 0; j < LENGTH(modifiers); j++)
 			XGrabKey(dpy, XKeysymToKeycode(dpy, XK_Super_L), modifiers[j], root,
