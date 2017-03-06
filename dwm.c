@@ -1063,7 +1063,8 @@ focus(Client *c)
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
 	selmon->sel = c;
-	warp(c);
+	if (c != NULL)
+		warp(c);
 	drawbars();
 }
 
@@ -2269,7 +2270,7 @@ updatebars(void)
 	XSetWindowAttributes wa = {
 		.override_redirect = True,
 		.background_pixmap = ParentRelative,
-		.event_mask = ButtonPressMask|ExposureMask
+		.event_mask = ButtonPressMask|ExposureMask|EnterWindowMask|LeaveWindowMask
 	};
 
 	for (m = mons; m; m = m->next) {
@@ -2281,7 +2282,6 @@ updatebars(void)
 		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, w, bh, 0, DefaultDepth(dpy, screen),
 		                          CopyFromParent, DefaultVisual(dpy, screen),
 		                          CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
-		XSelectInput(dpy, m->barwin, EnterWindowMask|LeaveWindowMask);
 		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
 		if (showsystray && m == systraytomon(m))
 			XMapRaised(dpy, systray->win);
