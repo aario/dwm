@@ -82,8 +82,6 @@ static const char *dmenuvolcmd_down[]       = { "dmenu_vol", "--volumedown", NUL
 static const char *dmenuvolcmd_mute[]       = { "dmenu_vol", "--mute", NULL };
 static const char *dmenuvolcmd_up[]         = { "dmenu_vol", "--volumeup", NULL };
 static const char *dmenublcmd[]             = { "dmenu_bl", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *dmenublcmd_down[]        = { "dmenu_bl", "--backlightdown", NULL };
-static const char *dmenublcmd_up[]          = { "dmenu_bl", "--backlightup", NULL };
 static const char *dmenumediacmd[]          = { "dmenu_media", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
 static const char *dmenumediacmd_playpause[]= { "dmenu_media", "--playpause", NULL };
 static const char *dmenumediacmd_stop[]     = { "dmenu_media", "--stop", NULL };
@@ -97,68 +95,61 @@ static const char *termcmd[]                = { "st", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ MODKEY,                       XK_p,      spawn,            {.v = dmenucmd } },
-	{ MODKEY,                       XK_w,      spawn,            {.v = dmenuwincmd } },
-	{ MODKEY,                       XK_v,      spawn,            {.v = dmenuvolcmd } },
-	{ MODKEY,                       XK_b,      spawn,            {.v = dmenublcmd } },
-	{ MODKEY,                       XK_m,      spawn,            {.v = dmenumediacmd } },
-	{ MODKEY,                       XK_c,      spawn,            {.v = dmenucustomcmd } },
-	{ MODKEY,                       XK_h,      spawn,            {.v = dmenuhomecmd } },
-	{ MODKEY,                       XK_Escape, spawn,            {.v = dmenuappscmd } },
-	{ MODKEY|ShiftMask,             XK_Return, spawn,            {.v = termcmd } },
-	{ MODKEY,                       XK_l,      spawn,            {.v = slockcmd } },
-	{ MODKEY,                       XK_x,      togglebar,        {0} },
-	{ MODKEY,                       XK_j,      focusstack,       {.i = +1 } },
-	{ MODKEY,                       XK_k,      focusstack,       {.i = -1 } },
-	{ MODKEY|ControlMask,           XK_j,      pushdown,         {0} },
-	{ MODKEY|ControlMask,           XK_k,      pushup,           {0} },
-	{ MODKEY,                       XK_i,      incnmaster,       {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,       {.i = -1 } },
-	{ MODKEY,                       XK_Left,   setmfact,         {.f = -0.05} },
-	{ MODKEY,                       XK_Right,  setmfact,         {.f = +0.05} },
-	{ MODKEY,                       XK_Return, zoom,             {0} },
-	{ MODKEY,                       XK_Tab,    view,             {0} },
-	{ MODKEY|ShiftMask,             XK_c,      killclient,       {0} },
-	{ Mod1Mask,             				XK_F4,     killclient,       {0} },
-	{ MODKEY,                       XK_F1,     setlayout,        {.v = &layouts[0]} },
-	{ MODKEY,                       XK_F2,     setlayout,        {.v = &layouts[1]} },
-	{ MODKEY,                       XK_F3,     setlayout,        {.v = &layouts[2]} },
-	{ MODKEY,                       XK_F4,     setlayout,        {.v = &layouts[3]} },
-	{ MODKEY,                       XK_space,  setlayout,        {0} },
-	{ MODKEY|ShiftMask,             XK_space,  togglefloating,   {0} },
-	{ MODKEY,                       XK_0,      view,             {.ui = ~0 } },
-	{ MODKEY|ShiftMask,             XK_0,      tag,              {.ui = ~0 } },
-	{ MODKEY,                       XK_comma,  focusmon,         {.i = -1 } },
-	{ MODKEY,                       XK_period, focusmon,         {.i = +1 } },
-	{ MODKEY|ShiftMask,             XK_comma,  tagmon,           {.i = -1 } },
-	{ MODKEY|ShiftMask,             XK_period, tagmon,           {.i = +1 } },
-	TAGKEYS(                        XK_1,                        0)
-	TAGKEYS(                        XK_2,                        1)
-	TAGKEYS(                        XK_3,                        2)
-	TAGKEYS(                        XK_4,                        3)
-	TAGKEYS(                        XK_5,                        4)
-	TAGKEYS(                        XK_6,                        5)
-	TAGKEYS(                        XK_7,                        6)
-	TAGKEYS(                        XK_8,                        7)
-	TAGKEYS(                        XK_9,                        8)
-	{ MODKEY|ShiftMask,             XK_r,      self_restart,     {0} },
-	{ MODKEY|ShiftMask,             XK_q,      quit,             {0} },
-	{ 0,                            KEYSYM_VOLUMEDOWN,spawn,     {.v = dmenuvolcmd_down } },
-	{ 0,                            KEYSYM_MUTE,spawn,           {.v = dmenuvolcmd_mute } },
-	{ 0,                            KEYSYM_VOLUMEUP,spawn,       {.v = dmenuvolcmd_up } },
-	{ 0,                            KEYSYM_HOME,spawn,           {.v = dmenuhomecmd } },
-	{ 0,                            KEYSYM_MEDIAPLAYER,spawn,    {.v = dmenumediacmd } },
-	{ 0,                            KEYSYM_PLAYPAUSE,spawn,      {.v = dmenumediacmd_playpause } },
-	{ 0,                            KEYSYM_STOP,spawn,           {.v = dmenumediacmd_stop } },
-	{ 0,                            KEYSYM_PREVIOUS,spawn,       {.v = dmenumediacmd_previous } },
-	{ 0,                            KEYSYM_NEXT,spawn,           {.v = dmenumediacmd_next } },
-	{ 0,                            KEYSYM_MAC_VOLUMEDOWN,spawn, {.v = dmenuvolcmd_down } },
-	{ 0,                            KEYSYM_MAC_MUTE,spawn,       {.v = dmenuvolcmd_mute } },
-	{ 0,                            KEYSYM_MAC_VOLUMEUP,spawn,   {.v = dmenuvolcmd_up } },
-	{ 0,                            KEYSYM_MAC_PREVIOUS,spawn,   {.v = dmenumediacmd_previous } },
-	{ 0,                            KEYSYM_MAC_NEXT,spawn,       {.v = dmenumediacmd_next } },
-	{ 0,                            KEYSYM_MAC_BLDOWN,spawn,     {.v = dmenublcmd_down } },
-	{ 0,                            KEYSYM_MAC_BLUP,spawn,       {.v = dmenublcmd_up } },
+	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+	{ MODKEY,                       XK_w,      spawn,          {.v = dmenuwincmd } },
+	{ MODKEY,                       XK_v,      spawn,          {.v = dmenuvolcmd } },
+	{ MODKEY,                       XK_b,      spawn,          {.v = dmenublcmd } },
+	{ MODKEY,                       XK_m,      spawn,          {.v = dmenumediacmd } },
+	{ MODKEY,                       XK_c,      spawn,          {.v = dmenucustomcmd } },
+	{ MODKEY,                       XK_h,      spawn,          {.v = dmenuhomecmd } },
+	{ MODKEY,                       XK_Escape, spawn,          {.v = dmenuappscmd } },
+	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
+	{ MODKEY,                       XK_l,      spawn,          {.v = slockcmd } },
+	{ MODKEY,                       XK_x,      togglebar,      {0} },
+	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
+	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
+	{ MODKEY|ControlMask,           XK_j,      pushdown,       {0} },
+	{ MODKEY|ControlMask,           XK_k,      pushup,         {0} },
+	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
+	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_Left,   setmfact,       {.f = -0.05} },
+	{ MODKEY,                       XK_Right,  setmfact,       {.f = +0.05} },
+	{ MODKEY,                       XK_Return, zoom,           {0} },
+	{ MODKEY,                       XK_Tab,    view,           {0} },
+	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
+	{ Mod1Mask,             				XK_F4,     killclient,     {0} },
+	{ MODKEY,                       XK_F1,     setlayout,      {.v = &layouts[0]} },
+	{ MODKEY,                       XK_F2,     setlayout,      {.v = &layouts[1]} },
+	{ MODKEY,                       XK_F3,     setlayout,      {.v = &layouts[2]} },
+	{ MODKEY,                       XK_F4,     setlayout,      {.v = &layouts[3]} },
+	{ MODKEY,                       XK_space,  setlayout,      {0} },
+	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
+	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
+	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
+	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
+	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
+	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+	TAGKEYS(                        XK_1,                      0)
+	TAGKEYS(                        XK_2,                      1)
+	TAGKEYS(                        XK_3,                      2)
+	TAGKEYS(                        XK_4,                      3)
+	TAGKEYS(                        XK_5,                      4)
+	TAGKEYS(                        XK_6,                      5)
+	TAGKEYS(                        XK_7,                      6)
+	TAGKEYS(                        XK_8,                      7)
+	TAGKEYS(                        XK_9,                      8)
+	{ MODKEY|ShiftMask,             XK_r,      self_restart,   {0} },
+	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+	{ 0,                            KEYSYM_VOLUMEDOWN,spawn,   {.v = dmenuvolcmd_down } },
+	{ 0,                            KEYSYM_MUTE,spawn,         {.v = dmenuvolcmd_mute } },
+	{ 0,                            KEYSYM_VOLUMEUP,spawn,     {.v = dmenuvolcmd_up } },
+	{ 0,                            KEYSYM_HOME,spawn,         {.v = dmenuhomecmd } },
+	{ 0,                            KEYSYM_MEDIAPLAYER,spawn,  {.v = dmenumediacmd } },
+	{ 0,                            KEYSYM_PLAYPAUSE,spawn,    {.v = dmenumediacmd_playpause } },
+	{ 0,                            KEYSYM_STOP,spawn,         {.v = dmenumediacmd_stop } },
+	{ 0,                            KEYSYM_PREVIOUS,spawn,     {.v = dmenumediacmd_previous } },
+	{ 0,                            KEYSYM_NEXT,spawn,         {.v = dmenumediacmd_next } },
 };
 
 /* button definitions */

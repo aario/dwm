@@ -87,14 +87,6 @@
 #define KEYSYM_NEXT									269025047
 #define KEYSYM_MEDIAPLAYER					269025153
 #define KEYSYM_HOME									269025048
-#define KEYSYM_MAC_VOLUMEDOWN				65480
-#define KEYSYM_MAC_MUTE							65479
-#define KEYSYM_MAC_VOLUMEUP					65481
-#define KEYSYM_MAC_PLAYPAUSE				65477
-#define KEYSYM_MAC_PREVIOUS					65476
-#define KEYSYM_MAC_NEXT							65478
-#define KEYSYM_MAC_BLUP							65471
-#define KEYSYM_MAC_BLDOWN						65470
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
