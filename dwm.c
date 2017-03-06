@@ -935,9 +935,9 @@ drawbar(Monitor *m)
 		         occ & 1 << i, False, CPU_THREADS);
 		x += w;
 	}
+	drw_setscheme(drw, &scheme[0]);
 	if (barhover) {
 		w = blw = TEXTW(m->ltsymbol, m);
-		drw_setscheme(drw, &scheme[0]);
 		drw_text(drw, m->background, x, 0, w, bh, m->ltsymbol, 0, CPU_THREADS);
 		x += w;
 	}
