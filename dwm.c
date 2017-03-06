@@ -301,6 +301,7 @@ static Systray *systray = NULL;
 static unsigned long systrayorientation = _NET_SYSTEM_TRAY_ORIENTATION_HORZ;
 static const char broken[] = "broken";
 static char stext[256];
+static char *stext_hover;
 static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
 static int bh, blw = 0;      /* bar geometry */
@@ -334,6 +335,7 @@ static Monitor *mons, *selmon;
 static Window root;
 static int matched_hotkey;
 static char * dwm_path;
+static unsigned int barhover;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -911,6 +913,7 @@ drawbar(Monitor *m)
 	int x, xx, w, dx;
 	unsigned int i, occ = 0, urg = 0;
 	Client *c;
+	char *s;
 
 	dx = (drw->fonts[0]->ascent + drw->fonts[0]->descent + 2) / 4;
 
@@ -922,6 +925,9 @@ drawbar(Monitor *m)
 	}
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
+		if (!barhover && !(m->tagset[m->seltags] & 1 << i) && !(urg & 1 << i)) { //Don't show inactive tags when bar is not hovered
+			continue;
+		}
 		w = TEXTW(tags[i], m);
 		drw_setscheme(drw, &scheme[(m->tagset[m->seltags] & 1 << i) ? 1 : (urg & 1 << i ? 2:0)]);
 		drw_text(drw, m->background, x, 0, w, bh, tags[i], 0, CPU_THREADS);
@@ -929,13 +935,19 @@ drawbar(Monitor *m)
 		         occ & 1 << i, False, CPU_THREADS);
 		x += w;
 	}
-	w = blw = TEXTW(m->ltsymbol, m);
-	drw_setscheme(drw, &scheme[0]);
-	drw_text(drw, m->background, x, 0, w, bh, m->ltsymbol, 0, CPU_THREADS);
-	x += w;
+	if (barhover) {
+		w = blw = TEXTW(m->ltsymbol, m);
+		drw_setscheme(drw, &scheme[0]);
+		drw_text(drw, m->background, x, 0, w, bh, m->ltsymbol, 0, CPU_THREADS);
+		x += w;
+	}
 	xx = x;
 	if (m == selmon) { /* status is only drawn on selected monitor */
-		w = TEXTW(stext, m);
+		if (barhover)
+			s = stext_hover;
+		else
+			s = stext;
+		w = TEXTW(s, m);
 		x = m->ww - w;
 		if (showsystray && m == systraytomon(m)) {
 			x -= getsystraywidth();
@@ -944,7 +956,7 @@ drawbar(Monitor *m)
 			x = xx;
 			w = m->ww - xx;
 		}
-		drw_colored_text(drw, m->background, scheme, NUMCOLORS, x, 0, w, bh, stext, CPU_THREADS);
+		drw_colored_text(drw, m->background, scheme, NUMCOLORS, x, 0, w, bh, s, CPU_THREADS);
 	} else
 		x = m->ww;
 	if ((w = x - xx) > bh) {
@@ -1398,9 +1410,24 @@ motionnotify(XEvent *e)
 	Monitor *m;
 	XMotionEvent *ev = &e->xmotion;
 
+	m = recttomon(ev->x_root, ev->y_root, 1, 1);
+	if (ev->window != root || ev->y_root < m->by || ev->y_root > m->by+bh) {
+		if (barhover == 1) {
+			barhover = 0;
+			drawbars();
+		}
+	}
+
 	if (ev->window != root)
 		return;
-	if ((m = recttomon(ev->x_root, ev->y_root, 1, 1)) != mon && mon) {
+
+	if (ev->y_root >= m->by && ev->y_root <= m->by+bh) {
+		if (barhover == 0) {
+			barhover = 1;
+			drawbars();
+		}
+	}
+	if (m != mon && mon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 		focus(NULL);
@@ -2233,7 +2260,7 @@ updatebars(void)
 		.background_pixmap = ParentRelative,
 		.event_mask = ButtonPressMask|ExposureMask
 	};
-	refresh_bar_background();
+
 	for (m = mons; m; m = m->next) {
 		if (m->barwin)
 			continue;
@@ -2433,6 +2460,15 @@ updatestatus(void)
 {
 	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
 		strcpy(stext, "dwm-"VERSION);
+	else {
+		stext_hover = strchr(stext, stext_delimiter);
+		if (stext_hover != NULL) {//If delimiter character found in status text:
+			stext_hover[0] = '\0';//This will set end of the stext to the delimiter character position and
+			stext_hover++;//Moves begining of the stext_hover to one character after the delimiter
+		} else //Otherwise:
+			stext_hover = stext;//show normal stext when hover
+	}
+
 	drawbar(selmon);
 }
 

@@ -6,6 +6,6 @@ while [ 1 ]; do
 	cpu_temp=`sensors  | grep Core | head -1 | awk '{print $3}'`
 	curr_date=`date "+%a %d|%H:%M:%S" | tr -d '\n'`
 	extra_status=`cat /tmp/status | tr -d '\n'`
-	xsetroot -name "$extra_status[MEM: $mem%] [BAT: $bat""%] [CPU: $cpu_temp] [$curr_date]"
+	xsetroot -name "[BAT: $bat""%] [$curr_date]"'$'"$extra_status[MEM: $mem%] [BAT: $bat""%] [CPU: $cpu_temp] [$curr_date]"
 	sleep 1
 done

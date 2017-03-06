@@ -11,6 +11,19 @@ static const char colors[NUMCOLORS][MAXCOLORS][8] = {
   // add more here
 };
 
+/* Delimiter character for status text
+ * Whatever is before delimiter is normal status text whatever comes
+ * after it will be displayed on hover. When delimiter character doesn't
+ * exist, normal text will be always displayed.
+ * For example if delimiter is $ and:
+ * 	xsetroot -name 'abcd$defg'
+ * Then the status text will be:
+ * 	abcd
+ * And on mouse hover it becomes:
+ * 	defg
+ * */
+static const char stext_delimiter = '$';
+
 /* appearance */
 static const char *fonts[] = {
 	"monospace:size=15"
