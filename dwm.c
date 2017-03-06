@@ -209,6 +209,7 @@ static Monitor *dirtomon(int dir);
 static void drawbar(Monitor *m);
 static void drawbars(void);
 static void enternotify(XEvent *e);
+static void leavenotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusin(XEvent *e);
@@ -314,6 +315,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[ConfigureNotify] = configurenotify,
 	[DestroyNotify] = destroynotify,
 	[EnterNotify] = enternotify,
+	[LeaveNotify] = leavenotify,
 	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
@@ -990,16 +992,38 @@ enternotify(XEvent *e)
 	Monitor *m;
 	XCrossingEvent *ev = &e->xcrossing;
 
-	if ((ev->mode != NotifyNormal || ev->detail == NotifyInferior) && ev->window != root)
-		return;
 	c = wintoclient(ev->window);
 	m = c ? c->mon : wintomon(ev->window);
+
+	if (ev->window == m->barwin) {
+		barhover = 1;
+		drawbars();
+	}
+
+	if ((ev->mode != NotifyNormal || ev->detail == NotifyInferior) && ev->window != root)
+		return;
 	if (m != selmon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 	} else if (!c || c == selmon->sel)
 		return;
 	focus(c);
+}
+
+void
+leavenotify(XEvent *e)
+{
+	Monitor *m;
+	Client *c;
+	XMotionEvent *ev = &e->xmotion;
+
+	c = wintoclient(ev->window);
+	m = c ? c->mon : wintomon(ev->window);
+
+	if (ev->window == m->barwin) {
+		barhover = 0;
+		drawbars();
+	}
 }
 
 void
@@ -1410,23 +1434,10 @@ motionnotify(XEvent *e)
 	Monitor *m;
 	XMotionEvent *ev = &e->xmotion;
 
-	m = recttomon(ev->x_root, ev->y_root, 1, 1);
-	if (ev->window != root || ev->y_root < m->by || ev->y_root > m->by+bh) {
-		if (barhover == 1) {
-			barhover = 0;
-			drawbars();
-		}
-	}
-
 	if (ev->window != root)
 		return;
 
-	if (ev->y_root >= m->by && ev->y_root <= m->by+bh) {
-		if (barhover == 0) {
-			barhover = 1;
-			drawbars();
-		}
-	}
+	m = recttomon(ev->x_root, ev->y_root, 1, 1);
 	if (m != mon && mon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
@@ -2270,6 +2281,7 @@ updatebars(void)
 		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, w, bh, 0, DefaultDepth(dpy, screen),
 		                          CopyFromParent, DefaultVisual(dpy, screen),
 		                          CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
+		XSelectInput(dpy, m->barwin, EnterWindowMask|LeaveWindowMask);
 		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
 		if (showsystray && m == systraytomon(m))
 			XMapRaised(dpy, systray->win);
