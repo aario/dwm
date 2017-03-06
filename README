@@ -10,6 +10,8 @@ This is what you get (Transparent bar, No need for OpenGL):
 My fork (aario) contains these features:
 - based on version 6.1(20151109)
 - Blur Effect  A fast and nice blur effect. Does not need OpenGL and is all CPU based.
+- Bar is hybrid. On mouse hover more details will be diplayed.
+- Status text can be delimited with '$' character. In that case the second part is displayed when hover.
 - Works only with my fork of dmenu
 - Systray patch applied
 - Status colors patch applied
