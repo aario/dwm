@@ -4,10 +4,10 @@
 static const char colors[NUMCOLORS][MAXCOLORS][8] = {
   // border   foreground background
   { "#252525", "#CFFFEA", "#252525" },  // normal
-  { "#E08A00", "#00FFFC", "#E08A00" },  // selected
+  { "#252525", "#B87201", "#252525" },  // selected
   { "#FFCA00", "#000000", "#FFCA00" },  // urgent/warning  (black on yellow)
   { "#ff0000", "#ffffff", "#ff0000" },  // error (white on red)
-  { "#E08A00", "#00FFFC", "#E08A00" },  // Active titlebar
+  { "#252525", "#E08A00", "#252525" },  // Active titlebar
   // add more here
 };
 
