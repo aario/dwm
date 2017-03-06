@@ -87,6 +87,8 @@
 #define KEYSYM_NEXT									269025047
 #define KEYSYM_MEDIAPLAYER					269025153
 #define KEYSYM_HOME									269025048
+#define KEYSYM_BACKLIGHTDOWN				269025027
+#define KEYSYM_BACKLIGHTUP					269025026
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */

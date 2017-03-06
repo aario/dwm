@@ -82,6 +82,8 @@ static const char *dmenuvolcmd_down[]       = { "dmenu_vol", "--volumedown", NUL
 static const char *dmenuvolcmd_mute[]       = { "dmenu_vol", "--mute", NULL };
 static const char *dmenuvolcmd_up[]         = { "dmenu_vol", "--volumeup", NULL };
 static const char *dmenublcmd[]             = { "dmenu_bl", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+static const char *dmenublcmd_down[]        = { "dmenu_bl", "--backlightdown", NULL };
+static const char *dmenublcmd_up[]          = { "dmenu_bl", "--backlightup", NULL };
 static const char *dmenumediacmd[]          = { "dmenu_media", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
 static const char *dmenumediacmd_playpause[]= { "dmenu_media", "--playpause", NULL };
 static const char *dmenumediacmd_stop[]     = { "dmenu_media", "--stop", NULL };
@@ -150,6 +152,8 @@ static Key keys[] = {
 	{ 0,                            KEYSYM_STOP,spawn,         {.v = dmenumediacmd_stop } },
 	{ 0,                            KEYSYM_PREVIOUS,spawn,     {.v = dmenumediacmd_previous } },
 	{ 0,                            KEYSYM_NEXT,spawn,         {.v = dmenumediacmd_next } },
+	{ 0,                            KEYSYM_BACKLIGHTDOWN,spawn,{.v = dmenublcmd_down } },
+	{ 0,                            KEYSYM_BACKLIGHTUP,spawn,  {.v = dmenublcmd_up } },
 };
 
 /* button definitions */
