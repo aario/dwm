@@ -247,7 +247,7 @@ drw_bluriamge (XImage *image, int radius, unsigned int cpu_threads)
 }
 
 XImage*
-drw_gettintedscreenshot(Drw* drw, Background *background, unsigned long tint, unsigned int num_threads)
+drw_gettintedscreenshot(Background *background, unsigned long tint, unsigned int num_threads)
 {
 	for (int i = 0; i < background->tintcachecount; i++) {
 		if ((background->tintcache[i].tint == tint) && (background->tintcache[i].image)){
@@ -274,7 +274,7 @@ drw_gettintedscreenshot(Drw* drw, Background *background, unsigned long tint, un
 void
 drw_fillrect(Drw *drw, Background *background, int x, int y, unsigned int w, unsigned int h, unsigned long tint, unsigned int num_threads)
 {
-    XImage* image = drw_gettintedscreenshot(drw, background, tint, num_threads);
+    XImage* image = drw_gettintedscreenshot(background, tint, num_threads);
     XPutImage(drw->dpy, drw->drawable, drw->gc, image, x, y, x, y, w, h);
     XFlush(drw->dpy);
 }
