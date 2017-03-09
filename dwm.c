@@ -211,7 +211,7 @@ static void drawbars(void);
 static void enternotify(XEvent *e);
 static void leavenotify(XEvent *e);
 static void expose(XEvent *e);
-static void focus(Client *c);
+static void focus(Client *c, int warpmouse);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
 static void focusstack(const Arg *arg);
@@ -389,7 +389,7 @@ pushup(const Arg *arg) {
 		sel->next = NULL;
 		c->next = sel;
 	}
-	focus(sel);
+	focus(sel, 1);
 	arrange(selmon);
 }
 
@@ -410,7 +410,7 @@ pushdown(const Arg *arg) {
 		detach(sel);
 		attach(sel);
 	}
-	focus(sel);
+	focus(sel, 1);
 	arrange(selmon);
 }
 
@@ -567,7 +567,7 @@ buttonpress(XEvent *e)
 	if ((m = wintomon(ev->window)) && m != selmon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
-		focus(NULL);
+		focus(NULL, 0);
 	}
 	if (ev->window == selmon->barwin) {
 		i = x = 0;
@@ -584,7 +584,7 @@ buttonpress(XEvent *e)
 		else
 			click = ClkWinTitle;
 	} else if ((c = wintoclient(ev->window))) {
-		focus(c);
+		focus(c, 1);
 		click = ClkClientWin;
 	}
 	for (i = 0; i < LENGTH(buttons); i++)
@@ -703,8 +703,8 @@ clientmessage(XEvent *e)
 			XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask | ResizeRedirectMask);
 			XReparentWindow(dpy, c->win, systray->win, 0, 0);
 			/* use parents background color */
-			swa.background_pixel  = scheme[SchemeNorm].bg->pix;
-			XChangeWindowAttributes(dpy, c->win, CWBackPixel, &swa);
+			swa.background_pixmap  = ParentRelative;
+			XChangeWindowAttributes(dpy, c->win, CWBackPixmap, &swa);
 			sendevent(c->win, netatom[Xembed], StructureNotifyMask, CurrentTime, XEMBED_EMBEDDED_NOTIFY, 0 , systray->win, XEMBED_EMBEDDED_VERSION);
 			/* FIXME not sure if I have to send these events, too */
 			sendevent(c->win, netatom[Xembed], StructureNotifyMask, CurrentTime, XEMBED_FOCUS_IN, 0 , systray->win, XEMBED_EMBEDDED_VERSION);
@@ -778,7 +778,7 @@ configurenotify(XEvent *e)
 			updatebars();
 			for (m = mons; m; m = m->next)
 				resizebarwin(m);
-			focus(NULL);
+			focus(NULL, 0);
 			arrange(NULL);
 		}
 	}
@@ -1007,7 +1007,7 @@ enternotify(XEvent *e)
 		selmon = m;
 	} else if (!c || c == selmon->sel)
 		return;
-	focus(c);
+	focus(c, 0);
 }
 
 void
@@ -1040,7 +1040,7 @@ expose(XEvent *e)
 }
 
 void
-focus(Client *c)
+focus(Client *c, int warpmouse)
 {
 	if (!c || !ISVISIBLE(c))
 		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
@@ -1063,7 +1063,7 @@ focus(Client *c)
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
 	selmon->sel = c;
-	if (c != NULL)
+	if (c != NULL && warpmouse)
 		warp(c);
 	drawbars();
 }
@@ -1090,7 +1090,7 @@ focusmon(const Arg *arg)
 	unfocus(selmon->sel, 0); /* s/1/0/ fixes input focus issues
 					in gedit and anjuta */
 	selmon = m;
-	focus(NULL);
+	focus(NULL, 0);
 	warp(selmon->sel);
 }
 
@@ -1115,7 +1115,7 @@ focusstack(const Arg *arg)
 					c = i;
 	}
 	if (c) {
-		focus(c);
+		focus(c, 1);
 		restack(selmon);
 	}
 }
@@ -1380,7 +1380,7 @@ manage(Window w, XWindowAttributes *wa)
 	XMapWindow(dpy, c->win);
 	XkbGetState (dpy, XkbUseCoreKbd, &kbd_state);
 	c->kbdgrp = kbd_state.group;
-	focus(NULL);
+	focus(NULL, 0);
 }
 
 void
@@ -1442,7 +1442,7 @@ motionnotify(XEvent *e)
 	if (m != mon && mon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
-		focus(NULL);
+		focus(NULL, 0);
 	}
 	mon = m;
 }
@@ -1506,7 +1506,7 @@ movemouse(const Arg *arg)
 	if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
 		sendmon(c, m);
 		selmon = m;
-		focus(NULL);
+		focus(NULL, 0);
 	}
 }
 
@@ -1522,7 +1522,7 @@ pop(Client *c)
 {
 	detach(c);
 	attach(c);
-	focus(c);
+	focus(c, 1);
 	arrange(c->mon);
 }
 
@@ -1620,9 +1620,9 @@ resize(Client *c, int x, int y, int w, int h, int interact)
 void
 resizebarwin(Monitor *m) {
 	unsigned int w = m->ww;
+	XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, w, bh);
 	if (showsystray && m == systraytomon(m))
 		w -= getsystraywidth();
-	XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, w, bh);
 }
 
 void
@@ -1693,7 +1693,7 @@ resizemouse(const Arg *arg)
 	if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
 		sendmon(c, m);
 		selmon = m;
-		focus(NULL);
+		focus(NULL, 0);
 	}
 }
 
@@ -1796,7 +1796,7 @@ sendmon(Client *c, Monitor *m)
 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
 	attach(c);
 	attachstack(c);
-	focus(NULL);
+	focus(NULL, 0);
 	arrange(NULL);
 }
 
@@ -1979,7 +1979,7 @@ setup(void)
 	XChangeWindowAttributes(dpy, root, CWEventMask|CWCursor, &wa);
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
-	focus(NULL);
+	focus(NULL, 0);
 }
 
 void
@@ -2059,7 +2059,7 @@ tag(const Arg *arg)
 {
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
-		focus(NULL);
+		focus(NULL, 0);
 		arrange(selmon);
 	}
 }
@@ -2183,7 +2183,7 @@ toggletag(const Arg *arg)
 	newtags = selmon->sel->tags ^ (arg->ui & TAGMASK);
 	if (newtags) {
 		selmon->sel->tags = newtags;
-		focus(NULL);
+		focus(NULL, 0);
 		arrange(selmon);
 	}
 }
@@ -2195,7 +2195,7 @@ toggleview(const Arg *arg)
 
 	if (newtagset) {
 		selmon->tagset[selmon->seltags] = newtagset;
-		focus(NULL);
+		focus(NULL, 0);
 		arrange(selmon);
 	}
 }
@@ -2238,7 +2238,7 @@ unmanage(Client *c, int destroyed)
 		XUngrabServer(dpy);
 	}
 	free(c);
-	focus(NULL);
+	focus(NULL, 0);
 	updateclientlist();
 	arrange(m);
 }
@@ -2551,11 +2551,11 @@ updatesystray(void) {
 		systray->win = XCreateSimpleWindow(dpy, root, x, m->by, w, bh, 0, 0, scheme[SchemeSel].bg->pix);
 		wa.event_mask        = ButtonPressMask | ExposureMask;
 		wa.override_redirect = True;
-		wa.background_pixel  = scheme[SchemeNorm].bg->pix;
+		wa.background_pixmap = ParentRelative;
 		XSelectInput(dpy, systray->win, SubstructureNotifyMask);
 		XChangeProperty(dpy, systray->win, netatom[NetSystemTrayOrientation], XA_CARDINAL, 32,
 				PropModeReplace, (unsigned char *)&systrayorientation, 1);
-		XChangeWindowAttributes(dpy, systray->win, CWEventMask|CWOverrideRedirect|CWBackPixel, &wa);
+		XChangeWindowAttributes(dpy, systray->win, CWEventMask|CWOverrideRedirect|CWBackPixmap, &wa);
 		XMapRaised(dpy, systray->win);
 		XSetSelectionOwner(dpy, netatom[NetSystemTray], systray->win, CurrentTime);
 		if (XGetSelectionOwner(dpy, netatom[NetSystemTray]) == systray->win) {
@@ -2570,9 +2570,6 @@ updatesystray(void) {
 		}
 	}
 	for (w = 0, i = systray->icons; i; i = i->next) {
-		/* make sure the background color stays the same */
-		wa.background_pixel  = scheme[SchemeNorm].bg->pix;
-		XChangeWindowAttributes(dpy, i->win, CWBackPixel, &wa);
 		XMapRaised(dpy, i->win);
 		w += systrayspacing;
 		i->x = w;
@@ -2589,8 +2586,6 @@ updatesystray(void) {
 	XConfigureWindow(dpy, systray->win, CWX|CWY|CWWidth|CWHeight|CWSibling|CWStackMode, &wc);
 	XMapWindow(dpy, systray->win);
 	XMapSubwindows(dpy, systray->win);
-	/* redraw background */
-	drw_rect(drw, m->background, 0, 0, w, bh, True, False, False, CPU_THREADS);
 	XSync(dpy, False);
 }
 
@@ -2633,7 +2628,7 @@ view(const Arg *arg)
 	selmon->seltags ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK)
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
-	focus(NULL);
+	focus(NULL, 0);
 	arrange(selmon);
 }
 
